@@ -29,30 +29,27 @@ PUNCT='，。、；！？《》'
 import os
 OV_=json.load(open('/tmp/yiyi/override.json'))
 LOWLEFT='，。、；'
-def job_cell(a):
-    name,e=a; ch=name[0]
-    c=cv2.imread(f"/tmp/yiyi/cells/{e['pg']}_{e['r']:02d}_{e['k']:02d}.png");m,_=ink(c,OV_.get('boost',{}).get(ch,1))
-    if ch in OV_.get('clip',{}):
-        a_,b_,c_,d_=OV_['clip'][ch];z=np.zeros_like(m);z[a_:b_,c_:d_]=m[a_:b_,c_:d_];m=z
+def glyph_from_mask(name,m):
+    ch=name[0]
     n=norm_stroke(m,rmin=10.5,rmax=14.5)
     ys,xs=np.where(n>127)
     if len(ys)==0:return None
     x0,x1,y0,y1=xs.min(),xs.max(),ys.min(),ys.max();w,h=x1-x0,y1-y0
-    if ch in PUNCT:
-        s=1.35; cx,cy=510,510; ox,oy=500,380          # keep where she placed it in the cell
-        if ch in '，。、': cx,cy=x0+w/2,y0+h/2; ox,oy=210,40      # lower-left of em
-        if ch in '！？；': cx,cy=x0+w/2,y0+h/2; ox,oy=500,330
-        if ch in '《》': cx,cy=x0+w/2,y0+h/2; ox,oy=500,330
-    else:
-        size=max(w,h); target=800                        # font units; pull toward target, keep half her size variation
-        s=(target/size)**.6*(1.42**.4) if False else min(target/size*(size/560)**.4,980/size)
-        cx,cy=(x0+x1)/2,(y0+y1)/2
-        # damp her offset from the cell centre to 35%
-        cx=cx+(510-cx)*.0; ox=500+(cx-510)*.35*s*.5
-        oy=360-(cy-510)*.35*s*.5
+    size=max(w,h);target=800
+    s=min(target/size*(size/560)**.4,980/size)
+    cx,cy=(x0+x1)/2,(y0+y1)/2
+    ox=500+(cx-510)*.35*s*.5;oy=360-(cy-510)*.35*s*.5
     tf=lambda x,y:(round(ox+(x-cx)*s),round(oy-(y-cy)*s))
     small=cv2.resize(n,(510,510),interpolation=cv2.INTER_AREA)
-    return name,e,trace(small,lambda x,y:tf(x*2,y*2))
+    return name,trace(small,lambda x,y:tf(x*2,y*2))
+def job_cell(a):
+    name,e=a; ch=name[0]
+    if ch in PUNCT:return None
+    c=cv2.imread(f"/tmp/yiyi/cells/{e['pg']}_{e['r']:02d}_{e['k']:02d}.png");m,_=ink(c,OV_.get('boost',{}).get(ch,1))
+    if ch in OV_.get('clip',{}):
+        a_,b_,c_,d_=OV_['clip'][ch];z=np.zeros_like(m);z[a_:b_,c_:d_]=m[a_:b_,c_:d_];m=z
+    r=glyph_from_mask(name,m)
+    return None if r is None else (r[0],e,r[1])
 def cr(p,n=14):
     P=np.array(p,float)
     if len(P)==2: return np.linspace(P[0],P[1],6)

@@ -10,7 +10,7 @@ def j(path,w,q=84,bg='#ffffff'):
 def im(src,cap='',cls=''):
     c=f'<figcaption>{cap}</figcaption>' if cap else ''
     return f'<figure class="{cls}"><img loading="lazy" src="{src}" alt="{cap[:40]}">{c}</figure>'
-fp=OUT+'font/YiyiHand-Regular.woff2'
+fp=OUT+'font/yiyi-general.woff2'
 S=OUT+'stickers/png/'
 pairs=[('clay_chick','02_发芽啦','小鸡：球身、大圆鼻喙、刻线翅膀'),('clay_bunny','05_想你','粉团兔：原作没有脸，五官是新加的'),('clay_ghost','12_我来了','蘑菇帽幽灵：波浪帽檐、蝴蝶结、淡腮红'),('clay_pika','14_潮来了','泳池里的电气鼠：她的皮卡丘同人作品')]
 pair_html=''.join(f'<div class="pair"><img loading="lazy" src="{b(R+a+".jpg")}" alt="原作"><img loading="lazy" src="{j(S+c+".png",420,bg="#d9e8dc")}" alt="重建"><p>{t}</p></div>' for a,c,t in pairs)
@@ -37,10 +37,10 @@ textarea{{width:100%;min-height:150px;border:1px solid var(--line);border-radius
 @media(max-width:640px){{h1{{font-size:29px}}.nums{{grid-template-columns:1fr 1fr}}.g3,.g2,.pairs{{grid-template-columns:1fr}}}}
 </style></head><body><main>
 <header><h1>把孩子的作业和手工，做成一套字体和表情</h1>
-<p class="lead">从 65 张手机照片出发，提取 yiyi 的汉字、数字、英文笔迹做成字体，再分析她的画和黏土手工，做成 24 个 emoji 和 16 张表情包。这里记录方法、过程和走过的弯路。</p></header>
-{im(b(OUT+'font/specimen.png'),'最终字体样张。汉字和数字是她的真实笔迹，英文大部分由描线和补画得到，见第 4 节。')}
+<p class="lead">从 65 张手机照片出发，提取 yiyi 的汉字、数字、英文笔迹做成字体，并把她的笔法泛化到 3758 个常用字，再分析她的画和黏土手工，做成 24 个 emoji 和 16 张表情包。这里记录方法、过程和走过的弯路。</p></header>
+<div class="g2">{im(b(OUT+'font/specimen-raw.png'),'yiyi-raw：只收她亲手写的字')}{im(b(OUT+'font/specimen-general.png'),'yiyi-general：按她的笔法泛化到 3758 个常用字')}</div>
 <div class="g2">{im(j(OUT+'emoji/overview.png',1000),'24 个纸片 emoji')}{im(j(OUT+'stickers/overview.png',1000,bg='#cfe3d4'),'16 张黏土表情包')}</div>
-<div class="nums"><div><b>65</b>张原始照片</div><div><b>3184</b>个切出的格子</div><div><b>458</b>个她写过的汉字</div><div><b>40</b>套 emoji 与表情</div></div>
+<div class="nums"><div><b>65</b>张原始照片</div><div><b>3184</b>个切出的格子</div><div><b>458</b>个她写过的汉字</div><div><b>3758</b>个泛化后的汉字</div></div>
 
 <h2>1. 素材：先看清手里有什么</h2>
 <table><tr><th>类别</th><th>张数</th><th>内容</th><th>用途</th></tr>
@@ -86,7 +86,7 @@ textarea{{width:100%;min-height:150px;border:1px solid var(--line);border-radius
 <h3>自己试试</h3>
 <textarea aria-label="用 Yiyi 手写体试写">绿豆发芽了！
 我的爷爷每天早上五点就起床。</textarea>
-<p style="font-size:15px;color:var(--mut)">只有她写过的 458 个汉字是这个字体，其他字会用系统字体代替或显示为方块。</p>
+<p style="font-size:15px;color:var(--mut)">这里用的是 yiyi-general：她写过的 458 字用原迹，其余 3300 个常用字是按她的笔法生成的，见第 8 节。</p>
 
 <h2>6. 绘画：提炼规则，再画新的</h2>
 <div class="g2">{im(b(R+'draw_food.jpg'),'原作：披萨、奶茶和甜筒')}{im(b(R+'draw_char.jpg'),'原作：大眼角色')}</div>
@@ -102,7 +102,19 @@ textarea{{width:100%;min-height:150px;border:1px solid var(--line);border-radius
 <p>配文大多取自她作文里的词句，比如“发芽啦！”“风平浪静”“潮来了！”，用的是她的字体。第 13–16 张的角色是皮卡丘同人，只适合私下使用。</p>
 <div class="gifs">{gifs}</div>
 
-<h2>8. 踩过的坑</h2>
+<h2>8. 泛化：从 458 字扩到 3758 字</h2>
+<p>458 字只占常用字的约 12%。为了日常可用，又做了第二个字体，把她的笔法迁移到她没写过的字上。方法分三步：</p>
+<ol class="flow"><li><b>对齐</b>：借助开源笔画数据 Make Me a Hanzi，它给每个字提供了标准笔画的中心线。把标准骨架对齐到她写的 712 个样本上，再让每一笔吸附到她的墨迹上，就能量出“她这一笔和标准写法差多少”。</li>
+<li><b>建笔画库</b>：按“在哪个部件、第几笔”归档这些差异。例如她写“纟”的第一笔怎么拐、“口”的右上角怎么收，都能单独查到。</li>
+<li><b>生成</b>：新字先拆成部件。部件她写过，就借用她写这个部件时的笔画差异；没写过，就找形状最像的笔画。整体的宽高比、倾斜和摆放也来自她真实的书写。</li></ol>
+{im(b(R+'reg.png'),'对齐效果：蓝线是标准骨架，红线是吸附到她墨迹上的笔画')}
+<p>为了验证，每次拿走一个她写过的字，只用其余的字去生成它，再和真迹比较：</p>
+{im(b(R+'loo.png'),'每组左边是真迹，右边是“没见过这个字”时生成的结果；角标是能借用同部件笔画的比例')}
+{im(b(R+'gen_para.png'),'混排效果：蓝色是她的原迹，黑色是生成的字')}
+{im(b(R+'gen_rand.png'),'随机抽取的 240 个生成字')}
+<div class="note">生成的字是“像她写的”，不是她写的。它们比真迹更规整，少了随手的歪斜和抖动。所以分成两个字体：<b>yiyi-raw</b> 只收她的原迹，<b>yiyi-general</b> 用于日常打字。</div>
+
+<h2>9. 踩过的坑</h2>
 <table><tr><th>现象</th><th>原因</th><th>解决</th></tr>
 <tr><td>很多行没切出来</td><td>稿纸有 300 格和 225 格两种，行高不同</td><td>按每页的间距分布自动判断</td></tr>
 <tr><td>铅笔字缺笔</td><td>去绿线的规则误伤了淡笔画</td><td>只在格线附近去绿</td></tr>
@@ -113,12 +125,12 @@ textarea{{width:100%;min-height:150px;border:1px solid var(--line);border-radius
 <tr><td>She 变成 Sle</td><td>去噪点时只留最大连通块，h 的右半边被丢掉</td><td>改成只丢很小的碎块</td></tr>
 <tr><td>A、p、u 描偏</td><td>只凭网格读坐标</td><td>叠回原图核对后修正</td></tr></table>
 
-<h2>9. 局限和下一步</h2>
-<ul><li><b>字数不够</b>：458 字只占最常用 3755 字的约 12%，日常打字会缺字。再拍课文抄写和生字本，用同一流程就能扩充。</li>
+<h2>10. 局限和下一步</h2>
+<ul><li><b>原迹字数少</b>：yiyi-raw 只有 458 字。再拍课文抄写和生字本，用同一流程就能扩充，生成字也会因笔画库变大而更像她。</li><li><b>生成字更规整</b>：缺少她真迹里随手的不稳定感；GB2312 一级以外的字仍然没有。</li>
 <li><b>英文不全是原迹</b>：真正直接提取的只有 7 个字母，其余靠描线或补画。如果她在白纸上写一遍大小写字母表，就能全部换成原迹。</li>
 <li><b>风格化的边界</b>：emoji 和表情包是按规则新做的，不是 AI 生图，也不是她的原作，只是学习她的特点。</li>
 <li><b>少数字质量一般</b>：堵、翻、犹、移、接只有一个写得较粗的样本，放大后不够干净。</li></ul>
 <h3>用到的工具</h3>
-<p>Python、OpenCV、scikit-image、potracer、fontTools、HarfBuzz、NumPy，全部在本地运行。方案、转录和代码由 Claude Code 完成，yiyi 的作品是这一切的来源。</p>
+<p>Python、OpenCV、scikit-image、SciPy、potracer、fontTools、HarfBuzz、NumPy，笔画数据来自 Make Me a Hanzi（hanzi-writer-data），全部在本地运行。方案、转录和代码由 Claude Code 完成，yiyi 的作品是这一切的来源。</p>
 </main></body></html>'''
 open(OUT+'process.html','w').write(H);print(len(H)/1e6,'MB')
